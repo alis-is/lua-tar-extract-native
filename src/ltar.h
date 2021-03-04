@@ -1,0 +1,1 @@
+int luaopen_ltar(lua_State *L);
