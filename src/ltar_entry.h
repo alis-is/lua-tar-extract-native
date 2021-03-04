@@ -12,7 +12,6 @@ typedef enum TAR_ARCHIVE_ENTRY_KIND {
 } TAR_ARCHIVE_ENTRY_KIND;
 
 typedef struct TAR_ARCHIVE_ENTRY {
-  TAR_ARCHIVE *tar;
   char *path;
   size_t size;
   int mode;
