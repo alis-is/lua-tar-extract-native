@@ -1,8 +1,8 @@
 cmake_minimum_required (VERSION 2.6)
-project (eli_tar)
+project (ltar)
 
-file(GLOB eli_tar_sources ./src/**.c)
-SET(eli_tar ${eli_tar_sources})
+file(GLOB ltar_sources ./src/**.c)
+SET(ltar ${ltar_sources})
 
-ADD_LIBRARY (eli_tar ${eli_tar})
-TARGET_LINK_LIBRARIES (eli_tar)
+ADD_LIBRARY (ltar ${ltar})
+TARGET_LINK_LIBRARIES (ltar)
