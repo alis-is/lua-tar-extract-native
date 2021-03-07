@@ -80,6 +80,11 @@ int ltar_entry_seek(lua_State *L) {
 int ltar_entry_read(lua_State *L) {
   TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
   size_t len = luaL_optinteger(L, 2, entry->size);
+  if (entry->readPosition >= entry->size) {
+    lua_pushnil(L);
+    return 1;
+  }
+  
   lua_getiuservalue(L, 1, 1); // entry, archive
 
   TAR_ARCHIVE *tar = (TAR_ARCHIVE *)lua_touserdata(L, -1);
@@ -108,6 +113,7 @@ int ltar_entry_read(lua_State *L) {
     char *p = luaL_prepbuffsize(&b, nextChunkSize);
     size_t res = fread(p, 1, nextChunkSize, tar->f);
     luaL_addsize(&b, res);
+    entry->readPosition += res;
     dataL -= nextChunkSize;
   } while (dataL > 0);
 
