@@ -93,8 +93,6 @@ int ltar_open(lua_State *L) {
       kind = ELI_TAR_ENTRY_DIR_KIND;
       filesize = 0;
       break;
-    case 'L':
-      kind
     default:
       kind = ELI_TAR_ENTRY_FILE_KIND;
       break;
