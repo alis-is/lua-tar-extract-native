@@ -1,15 +1,15 @@
 #include "lauxlib.h"
+#include "ltar_archive.h"
 #include "lua.h"
 #include "lutil.h"
 #include "stdio.h"
 #include "string.h"
 #include <stdlib.h>
-#include "ltar_archive.h"
 
 int ltar_entry_header(lua_State *L) {
   TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
   lua_getiuservalue(L, 1, 1); // entry, archive
-  TAR_ARCHIVE *tar = (TAR_ARCHIVE*)lua_touserdata(L, -1);
+  TAR_ARCHIVE *tar = (TAR_ARCHIVE *)lua_touserdata(L, -1);
   if (tar->closed) {
     return push_error(L, "Cannot read closed file!");
   }
@@ -22,18 +22,54 @@ int ltar_entry_header(lua_State *L) {
 
 int ltar_entry_path(lua_State *L) {
   TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
+  if (entry->path == NULL) {
+    lua_pushnil(L);
+    return 1;
+  }
   lua_pushstring(L, entry->path);
+  return 1;
+}
+
+int ltar_entry_linkpath(lua_State *L) {
+  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
+  if (entry->linkpath == NULL) {
+    lua_pushnil(L);
+    return 1;
+  }
+  lua_pushstring(L, entry->linkpath);
+  return 1;
+}
+
+int ltar_entry_type(lua_State *L) {
+  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
+  lua_pushlstring(L, &entry->type, 1);
   return 1;
 }
 
 int ltar_entry_kind(lua_State *L) {
   TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
-  switch (entry->kind) {
-  case ELI_TAR_ENTRY_FILE_KIND:
+  switch (entry->type) {
+  case TAR_FILE:
+  case TAR_AFILE:
     lua_pushstring(L, "file");
     break;
-  case ELI_TAR_ENTRY_DIR_KIND:
+  case TAR_DIR:
     lua_pushstring(L, "directory");
+    break;
+  case TAR_HARDLINK:
+    lua_pushstring(L, "hardlink");
+    break;
+  case TAR_SYMLINK:
+    lua_pushstring(L, "symlink");
+    break;
+  case TAR_CHARDEV:
+    lua_pushstring(L, "chardev");
+    break;
+  case TAR_BLOCKDEV:
+    lua_pushstring(L, "blockdev");
+    break;
+  case TAR_FIFO:
+    lua_pushstring(L, "fifo");
     break;
   default:
     lua_pushstring(L, "other");
@@ -84,7 +120,7 @@ int ltar_entry_read(lua_State *L) {
     lua_pushnil(L);
     return 1;
   }
-  
+
   lua_getiuservalue(L, 1, 1); // entry, archive
 
   TAR_ARCHIVE *tar = (TAR_ARCHIVE *)lua_touserdata(L, -1);
@@ -137,12 +173,16 @@ int create_tar_entry_meta(lua_State *L) {
   lua_setfield(L, -2, "size");
   lua_pushcfunction(L, ltar_entry_kind);
   lua_setfield(L, -2, "kind");
+  lua_pushcfunction(L, ltar_entry_type);
+  lua_setfield(L, -2, "type");
   lua_pushcfunction(L, ltar_entry_header);
   lua_setfield(L, -2, "header");
   lua_pushcfunction(L, ltar_entry_seek);
   lua_setfield(L, -2, "seek");
   lua_pushcfunction(L, ltar_entry_path);
   lua_setfield(L, -2, "path");
+  lua_pushcfunction(L, ltar_entry_linkpath);
+  lua_setfield(L, -2, "linkpath");
   lua_pushcfunction(L, ltar_entry_mode);
   lua_setfield(L, -2, "mode");
 

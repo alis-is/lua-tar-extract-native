@@ -1,11 +1,11 @@
-#include "ltar.h"
+#include "ltar_archive.h"
 #include "lauxlib.h"
+#include "ltar.h"
 #include "lua.h"
 #include "lutil.h"
 #include "stdio.h"
 #include "string.h"
 #include <stdlib.h>
-#include "ltar_archive.h"
 
 /* Parse an octal number, ignoring leading and trailing nonsense. */
 static int parseoct(const char *p, size_t n) {
@@ -56,8 +56,9 @@ int ltar_open(lua_State *L) {
     sprintf(error, "Failed to open tar file - %s!", path);
     return push_error(L, error);
   }
-  lua_newtable(L);                                        // entries
-  TAR_ARCHIVE *archive = lua_newuserdata(L, sizeof(TAR_ARCHIVE)); // entries, archive
+  lua_newtable(L); // entries
+  TAR_ARCHIVE *archive =
+      lua_newuserdata(L, sizeof(TAR_ARCHIVE)); // entries, archive
   archive->f = f;
   archive->closed = 0;
   luaL_getmetatable(L, ELI_TAR_METATABLE); // entries, archive, archive meta
@@ -65,6 +66,7 @@ int ltar_open(lua_State *L) {
 
   size_t fileIndex = 1; // lua indexing
   size_t position = 0;
+
   for (;;) {
     bytes_read = fread(buff, 1, 512, f);
     if (bytes_read < 512) {
@@ -80,32 +82,19 @@ int ltar_open(lua_State *L) {
     }
 
     size_t filesize = parseoct(buff + 124, 12);
-    TAR_ARCHIVE_ENTRY_KIND kind = ELI_TAR_ENTRY_OTHER_KIND;
-    switch (buff[156]) {
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '6':
-      // hardlink, symlink, character device, block device, fifo
-      break;
-    case '5':
-      kind = ELI_TAR_ENTRY_DIR_KIND;
-      filesize = 0;
-      break;
-    default:
-      kind = ELI_TAR_ENTRY_FILE_KIND;
-      break;
-     }
+
     // entries, archive
     TAR_ARCHIVE_ENTRY *entry = lua_newuserdatauv(L, sizeof(TAR_ARCHIVE_ENTRY),
-                                             1); // entries, archive, entry
-    lua_pushvalue(L, 2); // entries, archive, entry, archive
+                                                 1); // entries, archive, entry
+    lua_pushvalue(L, 2);         // entries, archive, entry, archive
     lua_setiuservalue(L, -2, 1); // entries, archive, entry
 
-    entry->path = malloc(sizeof(char) * strlen(buff));
-    strcpy(entry->path, buff);
-    entry->kind = kind;
+    entry->path = strdup(buff);
+    entry->type = buff[156];
+    entry->linkpath =
+        (entry->type == TAR_HARDLINK || entry->type == TAR_SYMLINK)
+            ? strdup(buff + 157)
+            : NULL;
     entry->headerStart = position;
     entry->readPosition = 0;
     entry->size = filesize;
@@ -114,8 +103,10 @@ int ltar_open(lua_State *L) {
         L, ELI_TAR_ENTRY_METATABLE); // entries, archive, entry, entry meta
     lua_setmetatable(L, -2);         // entries, archive, entry
     lua_seti(L, -3, fileIndex++);    // entries, archive
-    filesize = filesize % 512 == 0 ? filesize : (filesize / 512 + 1) * 512; // align file size to 512B block
-    position += filesize + 512; // filesize + header
+    filesize = filesize % 512 == 0 ? filesize
+                                   : (filesize / 512 + 1) *
+                                         512; // align file size to 512B block
+    position += filesize + 512;               // filesize + header
     fseek(f, filesize, SEEK_CUR);
   }
   // entries, archive
