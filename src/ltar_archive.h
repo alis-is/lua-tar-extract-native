@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include "ltar_entry.h"
 
-#define ELI_TAR_METATABLE "TAR_ARCHIVE_METATABLE"
+#define TAR_ARCHIVE_METATABLE "TAR_ARCHIVE"
 
 typedef struct TAR_ARCHIVE {
   FILE *f;

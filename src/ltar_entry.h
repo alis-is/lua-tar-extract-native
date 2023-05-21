@@ -3,7 +3,7 @@
 
 #include "lua.h"
 
-#define ELI_TAR_ENTRY_METATABLE "TAR_ARCHIVE_ENTRY_METATABLE"
+#define TAR_ARCHIVE_ENTRY_METATABLE "TAR_ARCHIVE_ENTRY"
 
 typedef struct TAR_ARCHIVE_ENTRY {
   char *path;

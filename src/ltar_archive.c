@@ -61,8 +61,8 @@ int ltar_open(lua_State *L) {
       lua_newuserdata(L, sizeof(TAR_ARCHIVE)); // entries, archive
   archive->f = f;
   archive->closed = 0;
-  luaL_getmetatable(L, ELI_TAR_METATABLE); // entries, archive, archive meta
-  lua_setmetatable(L, -2);                 // entries, archive
+  luaL_getmetatable(L, TAR_ARCHIVE_METATABLE); // entries, archive, archive meta
+  lua_setmetatable(L, -2);                     // entries, archive
 
   size_t fileIndex = 1; // lua indexing
   size_t position = 0;
@@ -86,6 +86,8 @@ int ltar_open(lua_State *L) {
     // entries, archive
     TAR_ARCHIVE_ENTRY *entry = lua_newuserdatauv(L, sizeof(TAR_ARCHIVE_ENTRY),
                                                  1); // entries, archive, entry
+
+    // store archive in entry's user value
     lua_pushvalue(L, 2);         // entries, archive, entry, archive
     lua_setiuservalue(L, -2, 1); // entries, archive, entry
 
@@ -100,9 +102,9 @@ int ltar_open(lua_State *L) {
     entry->size = filesize;
     entry->mode = parseoct(buff + 100, 8);
     luaL_getmetatable(
-        L, ELI_TAR_ENTRY_METATABLE); // entries, archive, entry, entry meta
-    lua_setmetatable(L, -2);         // entries, archive, entry
-    lua_seti(L, -3, fileIndex++);    // entries, archive
+        L, TAR_ARCHIVE_ENTRY_METATABLE); // entries, archive, entry, entry meta
+    lua_setmetatable(L, -2);             // entries, archive, entry
+    lua_seti(L, -3, fileIndex++);        // entries, archive
     filesize = filesize % 512 == 0 ? filesize
                                    : (filesize / 512 + 1) *
                                          512; // align file size to 512B block
@@ -115,7 +117,7 @@ int ltar_open(lua_State *L) {
 }
 
 int ltar_close(lua_State *L) {
-  TAR_ARCHIVE *archive = (TAR_ARCHIVE *)lua_touserdata(L, 1);
+  TAR_ARCHIVE *archive = (TAR_ARCHIVE *)luaL_checkudata(L, 1, TAR_ARCHIVE);
   if (!archive->closed) {
     fclose(archive->f);
     archive->closed = 1;
@@ -123,14 +125,14 @@ int ltar_close(lua_State *L) {
 }
 
 int create_tar_meta(lua_State *L) {
-  luaL_newmetatable(L, ELI_TAR_METATABLE);
+  luaL_newmetatable(L, TAR_ARCHIVE_METATABLE);
 
   /* Method table */
   lua_newtable(L);
   lua_pushcfunction(L, ltar_close);
   lua_setfield(L, -2, "close");
 
-  lua_pushstring(L, ELI_TAR_METATABLE);
+  lua_pushstring(L, TAR_ARCHIVE_METATABLE);
   lua_setfield(L, -2, "__type");
 
   /* Metamethods */

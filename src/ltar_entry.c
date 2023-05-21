@@ -7,7 +7,7 @@
 #include <stdlib.h>
 
 int ltar_entry_header(lua_State *L) {
-  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
+  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)luaL_checkudata(L, 1, TAR_ARCHIVE_ENTRY_METATABLE);
   lua_getiuservalue(L, 1, 1); // entry, archive
   TAR_ARCHIVE *tar = (TAR_ARCHIVE *)lua_touserdata(L, -1);
   if (tar->closed) {
@@ -21,7 +21,7 @@ int ltar_entry_header(lua_State *L) {
 }
 
 int ltar_entry_path(lua_State *L) {
-  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
+  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)luaL_checkudata(L, 1, TAR_ARCHIVE_ENTRY_METATABLE);
   if (entry->path == NULL) {
     lua_pushnil(L);
     return 1;
@@ -31,7 +31,7 @@ int ltar_entry_path(lua_State *L) {
 }
 
 int ltar_entry_linkpath(lua_State *L) {
-  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
+  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)luaL_checkudata(L, 1, TAR_ARCHIVE_ENTRY_METATABLE);
   if (entry->linkpath == NULL) {
     lua_pushnil(L);
     return 1;
@@ -41,13 +41,13 @@ int ltar_entry_linkpath(lua_State *L) {
 }
 
 int ltar_entry_type(lua_State *L) {
-  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
+  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)luaL_checkudata(L, 1, TAR_ARCHIVE_ENTRY_METATABLE);
   lua_pushlstring(L, &entry->type, 1);
   return 1;
 }
 
 int ltar_entry_kind(lua_State *L) {
-  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
+  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)luaL_checkudata(L, 1, TAR_ARCHIVE_ENTRY_METATABLE);
   switch (entry->type) {
   case TAR_FILE:
   case TAR_AFILE:
@@ -79,19 +79,19 @@ int ltar_entry_kind(lua_State *L) {
 }
 
 int ltar_entry_size(lua_State *L) {
-  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
+  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)luaL_checkudata(L, 1, TAR_ARCHIVE_ENTRY_METATABLE);
   lua_pushinteger(L, entry->size);
   return 1;
 }
 
 int ltar_entry_mode(lua_State *L) {
-  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
+  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)luaL_checkudata(L, 1, TAR_ARCHIVE_ENTRY_METATABLE);
   lua_pushinteger(L, entry->mode);
   return 1;
 }
 
 int ltar_entry_seek(lua_State *L) {
-  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
+  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)luaL_checkudata(L, 1, TAR_ARCHIVE_ENTRY_METATABLE);
   size_t whencel;
   const char *whence = luaL_checklstring(L, 2, &whencel);
   if (whencel == 0) {
@@ -114,7 +114,7 @@ int ltar_entry_seek(lua_State *L) {
 }
 
 int ltar_entry_read(lua_State *L) {
-  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
+  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)luaL_checkudata(L, 1, TAR_ARCHIVE_ENTRY_METATABLE);
   size_t len = luaL_optinteger(L, 2, entry->size);
   if (entry->readPosition >= entry->size) {
     lua_pushnil(L);
@@ -158,12 +158,12 @@ int ltar_entry_read(lua_State *L) {
 }
 
 int ltar_entry_close(lua_State *L) {
-  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)lua_touserdata(L, 1);
+  TAR_ARCHIVE_ENTRY *entry = (TAR_ARCHIVE_ENTRY *)luaL_checkudata(L, 1, TAR_ARCHIVE_ENTRY_METATABLE);
   free(entry->path);
 }
 
 int create_tar_entry_meta(lua_State *L) {
-  luaL_newmetatable(L, ELI_TAR_ENTRY_METATABLE);
+  luaL_newmetatable(L, TAR_ARCHIVE_ENTRY_METATABLE);
 
   /* Method table */
   lua_newtable(L);
@@ -186,7 +186,7 @@ int create_tar_entry_meta(lua_State *L) {
   lua_pushcfunction(L, ltar_entry_mode);
   lua_setfield(L, -2, "mode");
 
-  lua_pushstring(L, ELI_TAR_ENTRY_METATABLE);
+  lua_pushstring(L, TAR_ARCHIVE_ENTRY_METATABLE);
   lua_setfield(L, -2, "__type");
 
   /* Metamethods */
