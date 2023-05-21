@@ -27,5 +27,6 @@ int ltar_open(lua_State *L);
 #define TAR_XHDTYPE 'x'
 #define TAR_XGLTYPE 'g'
 #define TAR_GNU_LONGNAME 'L'
+#define TAR_GNU_LONGLINK 'K'
 
 #endif

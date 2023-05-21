@@ -22,7 +22,8 @@ static const TarTypeConst tarTypes[] = {
     {"CONTIGUOUS", TAR_CONTIGUOUS},
     {"XHDTYPE", TAR_XHDTYPE},
     {"XGLTYPE", TAR_XGLTYPE},
-    {"GNU_LONGNAME", TAR_GNU_LONGNAME}
+    {"GNU_LONGNAME", TAR_GNU_LONGNAME},
+    {"GNU_LONGLINK", TAR_GNU_LONGLINK}
 };
 
 int luaopen_ltar(lua_State *L) {
