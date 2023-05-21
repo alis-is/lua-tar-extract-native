@@ -117,7 +117,7 @@ int ltar_open(lua_State *L) {
 }
 
 int ltar_close(lua_State *L) {
-  TAR_ARCHIVE *archive = (TAR_ARCHIVE *)luaL_checkudata(L, 1, TAR_ARCHIVE);
+  TAR_ARCHIVE *archive = (TAR_ARCHIVE *)luaL_checkudata(L, 1, TAR_ARCHIVE_METATABLE);
   if (!archive->closed) {
     fclose(archive->f);
     archive->closed = 1;
