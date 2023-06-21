@@ -56,13 +56,25 @@ int ltar_open(lua_State *L) {
     sprintf(error, "Failed to open tar file - %s!", path);
     return push_error(L, error);
   }
-  lua_newtable(L); // entries
-  TAR_ARCHIVE *archive =
-      lua_newuserdata(L, sizeof(TAR_ARCHIVE)); // entries, archive
+
+  TAR_ARCHIVE *archive = lua_newuserdata(L, sizeof(TAR_ARCHIVE)); // archive
   archive->f = f;
   archive->closed = 0;
-  luaL_getmetatable(L, TAR_ARCHIVE_METATABLE); // entries, archive, archive meta
-  lua_setmetatable(L, -2);                     // entries, archive
+  luaL_getmetatable(L, TAR_ARCHIVE_METATABLE); // archive, archive meta
+  lua_setmetatable(L, -2);                     // archive
+  return 1;
+}
+
+int ltar_entries(lua_State *L) {
+  TAR_ARCHIVE *archive =
+      (TAR_ARCHIVE *)luaL_checkudata(L, 1, TAR_ARCHIVE_METATABLE);
+  if (!archive->closed) {
+    lua_pushnil(L);
+    lua_pushstring(L, "Archive is closed");
+    return 2;
+  }
+
+  lua_newtable(L); // entries
 
   size_t fileIndex = 1; // lua indexing
   size_t position = 0;
@@ -85,11 +97,11 @@ int ltar_open(lua_State *L) {
 
     // entries, archive
     TAR_ARCHIVE_ENTRY *entry = lua_newuserdatauv(L, sizeof(TAR_ARCHIVE_ENTRY),
-                                                 1); // entries, archive, entry
+                                                 1); // archive, entries, entry
 
     // store archive in entry's user value
-    lua_pushvalue(L, 2);         // entries, archive, entry, archive
-    lua_setiuservalue(L, -2, 1); // entries, archive, entry
+    lua_pushvalue(L, 1);         // archive, entries, entry, archive
+    lua_setiuservalue(L, -2, 1); // archive, entries, entry
 
     entry->path = strdup(buff);
     entry->type = buff[156];
@@ -102,22 +114,21 @@ int ltar_open(lua_State *L) {
     entry->size = filesize;
     entry->mode = parseoct(buff + 100, 8);
     luaL_getmetatable(
-        L, TAR_ARCHIVE_ENTRY_METATABLE); // entries, archive, entry, entry meta
-    lua_setmetatable(L, -2);             // entries, archive, entry
-    lua_seti(L, -3, fileIndex++);        // entries, archive
+        L, TAR_ARCHIVE_ENTRY_METATABLE); // archive, entries, entry, entry meta
+    lua_setmetatable(L, -2);             // archive, entries, entry
+    lua_seti(L, -2, fileIndex++);        // archive, entries
     filesize = filesize % 512 == 0 ? filesize
                                    : (filesize / 512 + 1) *
                                          512; // align file size to 512B block
     position += filesize + 512;               // filesize + header
     fseek(f, filesize, SEEK_CUR);
   }
-  // entries, archive
-  lua_setfield(L, 1, "archive"); // entries
   return 1;
 }
 
 int ltar_close(lua_State *L) {
-  TAR_ARCHIVE *archive = (TAR_ARCHIVE *)luaL_checkudata(L, 1, TAR_ARCHIVE_METATABLE);
+  TAR_ARCHIVE *archive =
+      (TAR_ARCHIVE *)luaL_checkudata(L, 1, TAR_ARCHIVE_METATABLE);
   if (!archive->closed) {
     fclose(archive->f);
     archive->closed = 1;
@@ -131,6 +142,9 @@ int create_tar_meta(lua_State *L) {
   lua_newtable(L);
   lua_pushcfunction(L, ltar_close);
   lua_setfield(L, -2, "close");
+
+  lua_pushcfunction(L, ltar_entries);
+  lua_setfield(L, -2, "entries");
 
   lua_pushstring(L, TAR_ARCHIVE_METATABLE);
   lua_setfield(L, -2, "__type");
