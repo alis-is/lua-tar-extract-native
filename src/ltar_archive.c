@@ -139,6 +139,8 @@ int create_tar_meta(lua_State *L) {
   lua_setfield(L, -2, "__index");
   lua_pushcfunction(L, ltar_close);
   lua_setfield(L, -2, "__gc");
+  lua_pushcfunction(L, ltar_close);
+  lua_setfield(L, -2, "__close");
 
   return 1;
 }
