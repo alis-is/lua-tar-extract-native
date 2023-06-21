@@ -45,20 +45,19 @@ static int verify_checksum(const char *p) {
 }
 
 int ltar_open(lua_State *L) {
-  char buff[512];
   char error[130]; // 100 for path + 30 for error
-  size_t bytes_read;
   const char *path = luaL_checkstring(L, 1);
   lua_remove(L, 1);
 
   FILE *f = fopen(path, "rb");
   if (f == NULL) {
-    sprintf(error, "Failed to open tar file - %s!", path);
+    sprintf(error, "failed to open tar file - %s!", path);
     return push_error(L, error);
   }
 
   TAR_ARCHIVE *archive = lua_newuserdata(L, sizeof(TAR_ARCHIVE)); // archive
   archive->f = f;
+  archive->path = strdup(path);
   archive->closed = 0;
   luaL_getmetatable(L, TAR_ARCHIVE_METATABLE); // archive, archive meta
   lua_setmetatable(L, -2);                     // archive
@@ -70,9 +69,13 @@ int ltar_entries(lua_State *L) {
       (TAR_ARCHIVE *)luaL_checkudata(L, 1, TAR_ARCHIVE_METATABLE);
   if (!archive->closed) {
     lua_pushnil(L);
-    lua_pushstring(L, "Archive is closed");
+    lua_pushstring(L, "archive is closed");
     return 2;
   }
+
+  char buff[512];
+  char error[130]; // 100 for path + 30 for error
+  size_t bytes_read;
 
   lua_newtable(L); // entries
 
@@ -80,9 +83,9 @@ int ltar_entries(lua_State *L) {
   size_t position = 0;
 
   for (;;) {
-    bytes_read = fread(buff, 1, 512, f);
+    bytes_read = fread(buff, 1, 512, archive->f);
     if (bytes_read < 512) {
-      sprintf(error, "Short read on %s: expected 512, got %d\n", path,
+      sprintf(error, "Short read on %s: expected 512, got %d\n", archive->path,
               (int)bytes_read);
       return push_error(L, error);
     }
@@ -121,7 +124,7 @@ int ltar_entries(lua_State *L) {
                                    : (filesize / 512 + 1) *
                                          512; // align file size to 512B block
     position += filesize + 512;               // filesize + header
-    fseek(f, filesize, SEEK_CUR);
+    fseek(archive->f, filesize, SEEK_CUR);
   }
   return 1;
 }
@@ -130,6 +133,7 @@ int ltar_close(lua_State *L) {
   TAR_ARCHIVE *archive =
       (TAR_ARCHIVE *)luaL_checkudata(L, 1, TAR_ARCHIVE_METATABLE);
   if (!archive->closed) {
+    free(archive->path);
     fclose(archive->f);
     archive->closed = 1;
   }

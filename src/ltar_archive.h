@@ -9,6 +9,7 @@
 
 typedef struct TAR_ARCHIVE {
   FILE *f;
+  char* path;
   int closed;
 } TAR_ARCHIVE;
 
