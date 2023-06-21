@@ -67,7 +67,7 @@ int ltar_open(lua_State *L) {
 int ltar_entries(lua_State *L) {
   TAR_ARCHIVE *archive =
       (TAR_ARCHIVE *)luaL_checkudata(L, 1, TAR_ARCHIVE_METATABLE);
-  if (!archive->closed) {
+  if (archive->closed) {
     lua_pushnil(L);
     lua_pushstring(L, "archive is closed");
     return 2;
