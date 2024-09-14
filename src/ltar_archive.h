@@ -8,9 +8,9 @@
 #define TAR_ARCHIVE_METATABLE "TAR_ARCHIVE"
 
 typedef struct TAR_ARCHIVE {
-  FILE *f;
-  char* path;
-  int closed;
+	FILE *f;
+	char *path;
+	int closed;
 } TAR_ARCHIVE;
 
 int create_tar_meta(lua_State *L);
