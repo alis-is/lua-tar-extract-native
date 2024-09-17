@@ -2,7 +2,7 @@
 #include "lauxlib.h"
 #include "ltar.h"
 #include "lua.h"
-#include "lutil.h"
+#include "lerror.h"
 #include "stdio.h"
 #include "string.h"
 #include <stdlib.h>
